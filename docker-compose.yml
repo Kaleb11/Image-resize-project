@@ -1,0 +1,79 @@
+version: "3"
+services:
+  db:
+    image: postgres:12.8-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: imagepass
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    networks:
+      - rb-nw
+    deploy:
+      replicas: 1
+      update_config:
+        parallelism: 1
+        delay: 10s
+      restart_policy:
+        condition: on-failure
+  pgAdmin:
+    image: dpage/pgadmin4
+    ports:
+      - 8093:80
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: root  
+    networks:
+      - rb-nw
+    deploy:
+      replicas: 1
+      update_config:
+        parallelism: 1
+        delay: 10s
+      restart_policy:
+        condition: on-failure
+  adminer:
+    image: adminer
+    ports:
+      - 8092:8080
+    networks:
+      - rb-nw
+    deploy:
+      replicas: 1
+      update_config:
+        parallelism: 1
+        delay: 10s
+      restart_policy:
+        condition: on-failure
+
+  image:
+    image: registry.image
+    ports:
+      - 8091:8091
+    networks:
+      - rb-nw
+      - inspection-overlay
+    volumes: 
+      - ./public/assets/images/actual:/public/assets/images/actual
+      - ./public/assets/images/thumbnail:/public/assets/images/thumbnail
+      - ./public/assets/images/small:/public/assets/images/small
+      - ./fonts:/fonts
+    env_file:
+      - ./prod.env
+    deploy:
+      replicas: 1
+      update_config:
+        parallelism: 1
+        delay: 10s
+      restart_policy:
+        condition: on-failure
+
+
+networks:
+  rb-nw:
+  inspection-overlay:
+    external: true
+    driver: overlay
+
+volumes:
+  db-data:
